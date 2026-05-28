@@ -33,10 +33,18 @@ STORAGE_ROOT = os.environ.get("LOCAL_STORAGE_ROOT", "/data/uploads")
 SIGNED_URL_EXPIRY = 3600
 
 
+_FRONTEND_PROXY_URL = "https://awqafmaintstaff.com"
+
+
 def _get_backend_url() -> str:
-    domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "")
-    if domain:
-        return f"https://{domain}"
+    # Override with PUBLIC_URL env var if set.
+    public = os.environ.get("PUBLIC_URL", "").rstrip("/")
+    if public:
+        return public
+    # In production (Railway), route signed URLs through the frontend's
+    # Vercel API proxy to avoid cross-origin ERR_BLOCKED_BY_RESPONSE.
+    if os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
+        return _FRONTEND_PROXY_URL
     try:
         return settings.backend_url
     except Exception:
